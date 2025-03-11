@@ -9,7 +9,7 @@ import sys
 import os
 
 from hypso import Hypso
-from hypso.write import write_l1b_nc_file
+from hypso.write import write_l1c_nc_file
 
 
 def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
@@ -50,11 +50,12 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     satobj = Hypso(path=l1a_nc_file_path, verbose=True)
 
     satobj.generate_l1b_cube()
+    satobj.generate_l1c_cube()
 
-    write_l1b_nc_file(satobj, overwrite=True, datacube=True)
+    write_l1c_nc_file(satobj, overwrite=True, datacube=True)
 
 
-    l1b_nc_file_path = satobj.l1b_nc_file
+    l1c_nc_file_path = satobj.l1c_nc_file
 
     output_path = satobj.parent_dir
 
@@ -68,7 +69,7 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     settings = ac.acolite.settings.load(settings_file)
 
     # set settings provided above
-    settings['inputfile'] = str(l1b_nc_file_path)
+    settings['inputfile'] = str(l1c_nc_file_path)
     settings['output'] = str(output_path)
 
     settings['polygon'] = None
@@ -88,9 +89,9 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     # settings['l2w_parameters'] = ['t_nechad', 't_dogliotti']
 
     # process the current bundle
-    #processed = ac.acolite.acolite_run(settings=settings)
+    processed = ac.acolite.acolite_run(settings=settings)
 
-    #acolite_l2_file = processed[0]['l2r'][0]
+    acolite_l2_file = processed[0]['l2r'][0]
 
     # Maintainer comment:
     # Source: https://odnature.naturalsciences.be/remsem/acolite-forum/viewtopic.php?t=311
