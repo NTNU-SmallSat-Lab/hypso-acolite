@@ -59,7 +59,8 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
 
     output_path = satobj.parent_dir
 
-
+    del satobj
+    satobj=None
 
     # optional file with processing settings
     # if set to None defaults will be used
@@ -73,10 +74,17 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     settings['output'] = str(output_path)
 
     settings['polygon'] = None
-    settings['l2w_parameters'] = None
+    #settings['l2w_parameters'] = None
     settings['rgb_rhot'] = True
     settings['rgb_rhos'] = True
     settings['map_l2w'] = False
+
+    settings['l2w_mask'] = False
+
+    settings['l2w_parameters'] = ['Rrs_*', \
+                                  'spm_nechad2016', \
+                                  'chl_re_mishra',\
+                                  'ndci']
 
     # user and password from https://urs.earthdata.nasa.gov/profile
     # optional but good
@@ -87,6 +95,8 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     # settings['s2_target_res'] = 60
     # settings['dsf_path_reflectance'] = 'fixed'
     # settings['l2w_parameters'] = ['t_nechad', 't_dogliotti']
+
+    
 
     # process the current bundle
     processed = ac.acolite.acolite_run(settings=settings)
@@ -133,11 +143,15 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     '''
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3 or len(sys.argv) > 3:
-        print("Usage: python script.py <path_to_nc_file> <path_to_acolite>")
-        sys.exit(1)
+    
+    #if len(sys.argv) < 3 or len(sys.argv) > 3:
+    #    print("Usage: python script.py <path_to_nc_file> <path_to_acolite>")
+    #    sys.exit(1)
 
-    l1a_nc_file_path = sys.argv[1]
-    acolite_path = sys.argv[2]
+    #l1a_nc_file_path = sys.argv[1]
+    #acolite_path = sys.argv[2]
+
+    l1a_nc_file_path = '/home/cameron/Dokumenter/Data/froya_2025-02-25T09-52-30Z-l1a.nc'
+    acolite_path = '/home/cameron/Projects/acolite/'
 
     main(l1a_nc_file_path, acolite_path)
