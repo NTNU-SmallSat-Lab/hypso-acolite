@@ -12,7 +12,7 @@ from hypso import Hypso
 from hypso.write import write_l1b_nc_file
 
 
-def main(l1a_nc_file_path: str) -> np.ndarray:
+def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     """
     Run the ACOLITE correction model. Adjustments of the original files are made to ensure they work for HYPSO
 
@@ -26,12 +26,13 @@ def main(l1a_nc_file_path: str) -> np.ndarray:
     
     # add acolite clone to Python path and import acolite
 
+    acolite_path = Path(acolite_path)
+    acolite_path = os.path.join(acolite_path, "acolite")
+    acolite_path = Path(acolite_path).absolute()
 
-    acolite_path = ''
-
-    print(sys.path)
-    #sys.path.append(acolite_path)
-    print(sys.path)
+    #print(sys.path)
+    sys.path.append(str(acolite_path))
+    #print(sys.path)
 
     import acolite as ac
 
@@ -131,10 +132,11 @@ def main(l1a_nc_file_path: str) -> np.ndarray:
     '''
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or len(sys.argv) > 2:
-        print("Usage: python script.py <path_to_nc_file>")
+    if len(sys.argv) < 3 or len(sys.argv) > 3:
+        print("Usage: python script.py <path_to_nc_file> <path_to_acolite>")
         sys.exit(1)
 
     l1a_nc_file_path = sys.argv[1]
+    acolite_path = sys.argv[2]
 
-    main(l1a_nc_file_path)
+    main(l1a_nc_file_path, acolite_path)
