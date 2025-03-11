@@ -6,8 +6,13 @@ from pathlib import Path
 import netCDF4 as nc
 
 import sys
+import os
 
-def main(nc_file_path: str) -> np.ndarray:
+from hypso import Hypso
+from hypso.write import write_l1b_nc_file
+
+
+def main(l1a_nc_file_path: str) -> np.ndarray:
     """
     Run the ACOLITE correction model. Adjustments of the original files are made to ensure they work for HYPSO
 
@@ -22,28 +27,54 @@ def main(nc_file_path: str) -> np.ndarray:
     # add acolite clone to Python path and import acolite
 
 
+    acolite_path = ''
+
     print(sys.path)
     #sys.path.append(acolite_path)
     print(sys.path)
 
-    #import acolite as ac
+    import acolite as ac
+
+
+    # Check if the first file exists
+    if not os.path.isfile(l1a_nc_file_path):
+        print(f"Error: The file '{l1a_nc_file_path}' does not exist.")
+        return
+
+    # Process the first file
+    print(f"Processing file: {l1a_nc_file_path}")
+
+    l1a_nc_file_path = Path(l1a_nc_file_path)
+
+    satobj = Hypso(path=l1a_nc_file_path, verbose=True)
+
+    satobj.generate_l1b_cube()
+
+    write_l1b_nc_file(satobj, overwrite=True, datacube=True)
+
+
+    l1b_nc_file_path = satobj.l1b_nc_file
+
+    output_path = satobj.parent_dir
+
+
 
     # optional file with processing settings
     # if set to None defaults will be used
     settings_file = None
 
     # import settings
-    #settings = ac.acolite.settings.load(settings_file)
+    settings = ac.acolite.settings.load(settings_file)
 
     # set settings provided above
-    #settings['inputfile'] = nc_file_path
-    #settings['output'] = output_path
+    settings['inputfile'] = str(l1b_nc_file_path)
+    settings['output'] = str(output_path)
 
-    #settings['polygon'] = None
-    #settings['l2w_parameters'] = None
-    #settings['rgb_rhot'] = True
-    #settings['rgb_rhos'] = True
-    #settings['map_l2w'] = False
+    settings['polygon'] = None
+    settings['l2w_parameters'] = None
+    settings['rgb_rhot'] = True
+    settings['rgb_rhos'] = True
+    settings['map_l2w'] = False
 
     # user and password from https://urs.earthdata.nasa.gov/profile
     # optional but good
@@ -104,6 +135,6 @@ if __name__ == "__main__":
         print("Usage: python script.py <path_to_nc_file>")
         sys.exit(1)
 
-    nc_file_path = sys.argv[1]
+    l1a_nc_file_path = sys.argv[1]
 
-    main(nc_file_path)
+    main(l1a_nc_file_path)
