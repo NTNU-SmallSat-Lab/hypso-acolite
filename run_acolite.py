@@ -27,14 +27,16 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     # add acolite clone to Python path and import acolite
 
     acolite_path = Path(acolite_path)
-    acolite_path = os.path.join(acolite_path, "acolite")
+    #acolite_path = os.path.join(acolite_path, "acolite")
     acolite_path = Path(acolite_path).absolute()
 
     #print(sys.path)
     sys.path.append(str(acolite_path))
-    #print(sys.path)
+    print(sys.path)
 
     import acolite as ac
+    from acolite.acolite.settings import load
+    from acolite.acolite import acolite_run
 
 
     # Check if the first file exists
@@ -67,7 +69,8 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     settings_file = None
 
     # import settings
-    settings = ac.acolite.settings.load(settings_file)
+    #settings = ac.acolite.settings.load(settings_file)
+    settings = load(settings_file)
 
     # set settings provided above
     settings['inputfile'] = str(l1c_nc_file_path)
@@ -79,12 +82,38 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     settings['rgb_rhos'] = True
     settings['map_l2w'] = False
 
-    settings['l2w_mask'] = False
 
     settings['l2w_parameters'] = ['Rrs_*', \
+                                  'spm_nechad2010', \
                                   'spm_nechad2016', \
                                   'chl_re_mishra',\
+                                  'chl_oc2', \
+                                  'chl_oc3', \
+                                  'chl_re_moses3b', \
+                                  'chl_re_moses3b740', \
+                                  'fai', \
+                                  'fai_rhot', \
+                                  'fait', \
                                   'ndci']
+
+    settings['l2w_mask']=False
+
+    '''
+    settings['l2w_mask']=True
+    settings['l2w_mask_wave']=1600
+    settings['l2w_mask_threshold']=0.0215
+    settings['l2w_mask_water_parameters']=True
+    settings['l2w_mask_negative_rhow']=True
+    settings['l2w_mask_negative_wave_range']=[400,900]
+    settings['l2w_mask_cirrus']=True
+    settings['l2w_mask_cirrus_threshold']=0.005
+    settings['l2w_mask_cirrus_wave']=1373
+    settings['l2w_mask_high_toa']=True
+    settings['l2w_mask_high_toa_threshold']=0.3
+    settings['l2w_mask_high_toa_wave_range']=[400,2500]
+    settings['l2w_mask_mixed']=True
+    settings['l2w_data_in_memory']=False
+    '''
 
     # user and password from https://urs.earthdata.nasa.gov/profile
     # optional but good
@@ -96,10 +125,9 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     # settings['dsf_path_reflectance'] = 'fixed'
     # settings['l2w_parameters'] = ['t_nechad', 't_dogliotti']
 
-    
-
     # process the current bundle
-    processed = ac.acolite.acolite_run(settings=settings)
+    #processed = ac.acolite.acolite_run(settings=settings)
+    processed = acolite_run(settings=settings)
 
     acolite_l2_file = processed[0]['l2r'][0]
 
