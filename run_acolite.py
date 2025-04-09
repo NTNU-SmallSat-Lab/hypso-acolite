@@ -11,23 +11,16 @@ import os
 from hypso import Hypso
 from hypso.write import write_l1c_nc_file
 
+ACOLITE_PATH = '/home/cameron/Projects/acolite/'
 
-def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
-    """
-    Run the ACOLITE correction model. Adjustments of the original files are made to ensure they work for HYPSO
+def main(l1a_nc_path, lats_path=None, lons_path=None) -> np.ndarray:
 
-    :param hypso_info: Dictionary containing the hypso capture information
-    :param atmos_dict: Dictionary containing the information required for the atmospheric correction
-    :param nc_file_acoliteready: Absolute path for the .nc file for ACOLITE (L1B)
 
-    :return: Returns surface reflectanc corrected spectral image
-    """
     # https://odnature.naturalsciences.be/remsem/acolite-forum/viewtopic.php?t=238
     
     # add acolite clone to Python path and import acolite
-
+    acolite_path = ACOLITE_PATH
     acolite_path = Path(acolite_path)
-    #acolite_path = os.path.join(acolite_path, "acolite")
     acolite_path = Path(acolite_path).absolute()
 
     #print(sys.path)
@@ -40,16 +33,47 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
 
 
     # Check if the first file exists
-    if not os.path.isfile(l1a_nc_file_path):
-        print(f"Error: The file '{l1a_nc_file_path}' does not exist.")
+    if not os.path.isfile(l1a_nc_path):
+        print(f"Error: The file '{l1a_nc_path}' does not exist.")
         return
 
     # Process the first file
-    print(f"Processing file: {l1a_nc_file_path}")
+    print(f"Processing file: {l1a_nc_path}")
 
-    l1a_nc_file_path = Path(l1a_nc_file_path)
+    l1a_nc_path = Path(l1a_nc_path)
 
-    satobj = Hypso(path=l1a_nc_file_path, verbose=True)
+    satobj = Hypso(path=l1a_nc_path, verbose=True)
+
+    # Run indirect georeferencing
+    if lats_path is not None and lons_path is not None:
+        try:
+
+            with open(lats_path, mode='rb') as file:
+                file_content = file.read()
+            
+            lats = np.frombuffer(file_content, dtype=np.float32)
+
+            lats = lats.reshape(satobj.spatial_dimensions)
+
+            with open(lons_path, mode='rb') as file:
+                file_content = file.read()
+            
+            lons = np.frombuffer(file_content, dtype=np.float32)
+  
+            lons = lons.reshape(satobj.spatial_dimensions)
+
+
+            # Directly provide the indirect lat/lons loaded from the file. This function will run the track geometry computations.
+            satobj.run_indirect_georeferencing(latitudes=lats, longitudes=lons)
+
+        except Exception as ex:
+            print(ex)
+            print('Indirect georeferencing has failed. Defaulting to direct georeferencing.')
+
+            satobj.run_direct_georeferencing()
+
+    else:
+        satobj.run_direct_georeferencing()
 
     satobj.generate_l1b_cube()
     satobj.generate_l1c_cube()
@@ -57,7 +81,7 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     write_l1c_nc_file(satobj, overwrite=True, datacube=True)
 
 
-    l1c_nc_file_path = satobj.l1c_nc_file
+    l1c_nc_path = satobj.l1c_nc_file
 
     output_path = satobj.parent_dir
 
@@ -73,7 +97,7 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     settings = load(settings_file)
 
     # set settings provided above
-    settings['inputfile'] = str(l1c_nc_file_path)
+    settings['inputfile'] = str(l1c_nc_path)
     settings['output'] = str(output_path)
 
     settings['polygon'] = None
@@ -131,6 +155,10 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
 
     acolite_l2_file = processed[0]['l2r'][0]
 
+    print(acolite_l2_file)
+
+    print("ACOLITE Done!")
+
     # Maintainer comment:
     # Source: https://odnature.naturalsciences.be/remsem/acolite-forum/viewtopic.php?t=311
     # - L1R, containing the top-of-atmosphere reflectance (rhot_*) as converted to the ACOLITE format from the sensor specific L1 files
@@ -171,15 +199,13 @@ def main(l1a_nc_file_path: str, acolite_path: str) -> np.ndarray:
     '''
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2 or len(sys.argv) > 4:
+        print("Usage: python run_acolite.py <l1a_nc_path> [lats_path] [lons_path]")
+        sys.exit(1)
+
+    l1a_nc_path = sys.argv[1]
     
-    #if len(sys.argv) < 3 or len(sys.argv) > 3:
-    #    print("Usage: python script.py <path_to_nc_file> <path_to_acolite>")
-    #    sys.exit(1)
+    lats_path = sys.argv[2] if len(sys.argv) == 4 else None
+    lons_path = sys.argv[3] if len(sys.argv) == 4 else None
 
-    #l1a_nc_file_path = sys.argv[1]
-    #acolite_path = sys.argv[2]
-
-    l1a_nc_file_path = '/home/cameron/Dokumenter/Data/froya_2025-02-25T09-52-30Z-l1a.nc'
-    acolite_path = '/home/cameron/Projects/acolite/'
-
-    main(l1a_nc_file_path, acolite_path)
+    main(l1a_nc_path, lats_path, lons_path)
